@@ -1,0 +1,25 @@
+\section{Introduction}
+ 
+
+\subsection{Statement}
+
+We want to build a micro-service oriented architecture studying and using Kubernetes (K8s) to deploy and scale horizzontally our containers (pods in K8s terminology). The goal of the project is to create a complete platform to study the behaviors and the increased capacities of an horizontal scaling based on a message-queue rejection rate. In doing so, technologies such as k6, rabbitmq, kafka, k8s, docker, grafana, prometheus, Sirio et al will be used. In details, we want to models different types of load (Poisson, Uniform, Erlang) with different rates to generate messages modelling a system in which we scale horizzontally the service pods on the base of a rejection rate (more details below). 
+
+\subsection{Project goal and working environment}
+The goal of the project is to verify the feasibility and efficacy of a horizontal autoscaler based on stochastic properties of the model that represent a queue system. Using the framework Sirio it is possible to define Stochastic Time Petri Nets that models the behavior of a microservices system, and evaluate some quantity of interest (like Rejection Rate). The objective is to scale the number of services in the most efficient way while respecting a Service Level Agreement (SLA), identified in this case as a maximum rejection rate tolerated. The working environment is developed using Kubernetes and consists of these main components:
+\begin{itemize}
+    \item \textbf{Arrival Service}: this service generates the requests following a particular stochastic distribution. This is implemented using K6.
+
+    \item \textbf{K6}: a framework used to stress test systems like ours.
+
+    \item \textbf{Queue}: this element buffers the requests, allowing the worker to elaborate them in a second moment. We decided to use RabbitMQ for the main queue thanks to the provided possibility of setting the queue size explicitly, but also a Kafka queue will be experimented.
+
+    \item \textbf{Process Service:} this service pulls messages from the queue and elaborates them. We did a custom implementation in Pyhton that simply executes a busy wait.
+    
+    \item \textbf{Monitoring/Visualization:} it’s done using Prometheus in combination with Grafana.
+
+    \item \textbf{Sirio Controller:} this Java service utilizes the CDF of the arrival process (calculated using another custom service) to build STPN and evaluating the rejection rate. Then, it prescribes to Kubernetes the minimum number of active replicas needed to respect the SLA.
+    
+\end{itemize}
+
+\clearpage
