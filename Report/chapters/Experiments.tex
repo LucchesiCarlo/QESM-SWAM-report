@@ -19,6 +19,7 @@ We executed the following tests using this environment:
 \subsection{Experiments Description}
 The experiments have the goal of emulating different types of traffic, with the objective of showing the system behavior. The possible experiments can be performed choosing different rates following a state machine. In other words, if the user selects 4 different rates for the distribution selected the load is composed of 4 circularly executed states with the rated specified. The duration of each state is editable from the code.
 
+
 So, for example, choosing a uniform distribution with all rates value such that min=max (to model the deterministic arrival process) and selecting a test with a duration of 9 minutes and rates = ([1,1];[2,2];[3,3];[5,5]) we are modelling an arrival process that generates a load with 1 message/s for 1 minute, than 2 messages/s for 1 minute, than 3 messages/s for 1 minute, than 5 messages/s for 1 minute. At this point 4 minutes has been passed so the arrival process restarts circularly from 1 message/s and so on until the end of the test.
 
 \subsection{Experiments guide}
