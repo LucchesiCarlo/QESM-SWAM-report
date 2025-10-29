@@ -1,0 +1,19 @@
+\section{Lag Cost}
+\label{sec:lag_cost}
+In figure \ref{fig:uniform_inefficiency} is reported the inefficiency while the system goes; in the followings more details in how this curve is calculated. To understand this calculation, we need to start from how cost is defined. We choose to measure cost without loss of generality in the unit of $pods \cdot time$, so that the cost of the system is both proportional to the quantity of resources used and the time we used. It's worth noting that this type of billing is common in many types of cloud providers. For example, a system that executes 5 pods for 3 seconds has a cost of 15. So, given any sequence of measured pods $pods_i$ for $i=1,\dots,t$, with a sampling period of $T_s$, the total cost of the system is calculated as \ref{eq:cost}:
+\begin{equation}
+    \label{eq:cost}
+    C = T_s\sum_{i=1}^{t}pods_i
+\end{equation}
+
+So, be $C_{preb}$ the prescribed cost obtained by the sequence of pods dictated by the Sirio Scaler, and $C_{real}$ the real cost of all existing pods, we calculated the relative inefficiency as in equation \ref{eq:inefficiency}:
+\begin{equation}
+    \label{eq:inefficiency}
+    I =\frac{C_{real} - C_{preb}}{C_{preb}} = \frac{C_{real}}{C_{preb}} - 1
+\end{equation}
+
+Giving the formulas in \ref{eq:cost} and \ref{eq:inefficiency}, both can be calculated for a particular time $t_0$ by truncating the sequence $pods_i$ for $i\leq t_0$.
+
+Note that for how we defined $I$, it can be smaller than 1 in theory. In practice, we consider initializing pods for the actual cost, and making that it's very unlikely that Kubernetes waits so much to start creating them, this eventuality is negligible. However, in equation \ref{eq:inefficiency} we can force the numerator to be bigger or at least equal to the denominator.
+
+We want to state that this measure of inefficiency not necessary means a bad implementation, but only a measure of the difference between a perfect control and the actual one. In fact, this isn't calculated in reference to a commonly used control or any other type.
