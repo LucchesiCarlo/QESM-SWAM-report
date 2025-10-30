@@ -188,66 +188,90 @@ In this report, we separated the logic of establishing the optimal number of rep
 \subsection{Results}
 \subsubsection{Immediate Apply of Recommendations}
 
-In executing this experiment, both for constant and exponential arrival rates, we measure the arrived and rejecte messages in figure \ref{}.
-This behavior is correctly shown in image \ref{fig:uniform_messages}.
+In executing this experiment, both for constant and exponential arrival rates, we measure the arrived and rejected messages in figures \ref{fig:default_constant_messages} and \ref{fig:default_exponential_messages}.
+
 \begin{figure}[H]
-	\begin{subfigure}{0.85\linewidth}
+	\begin{subfigure}{0.49\linewidth}
 	    \centering
-	    \includegraphics[width=0.85\linewidth]{images/default/constant/messages.png}
-	    \caption{Arrived and Rejected messages per second to the Queue.}
-	    \label{fig:uniform_messages}
+	    \includegraphics[width=1\linewidth]{images/default/constant/messages.png}
+	    \caption{Arrived and Rejected messages per second in constant rates.}
+	    \label{fig:default_constant_messages}
 	\end{subfigure}
-	\begin{subfigure}{0.85\linewidth}
+	\begin{subfigure}{0.49\linewidth}
 	    \centering
-    		\includegraphics[width=0.85\linewidth]{images/default/exponential/messages.png}
-	    \caption{Arrived and Rejected messages per second to the Queue.}
-    		\label{fig:uniform_messages}
+    		\includegraphics[width=1\linewidth]{images/default/exponential/messages.png}
+	    \caption{Arrived and Rejected messages per second with exponential arrival times.}
+    		\label{fig:default_exponential_messages}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/default/constant/rejection_cumulative.png}
+	    \caption{Cumulative Rejection rate for constant arrival time experiment.}
+	    \label{fig:default_constant_rejection}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/default/exponential/rejection_cumulative.png}
+	    \caption{Cumulative Rejection rate for exponential arrival time experiment.}
+	    \label{fig:default_exponential_rejection}
 	\end{subfigure}
 \end{figure}
-As said, the goal of the control is to keep a rejection rate below 5\%. In figure \ref{fig:uniform_rejection} is reported the cumulative rejection rate through time. To obtain this graph, we calculated the cumulative quantity of rejected messages, and then divided for the corresponding cumulative value of arrived messages. The exact final rejection rate is \textbf{2.8\%}.
+
+As said, the goal of the control is to keep a rejection rate below 5\%. For both of them, rejection rate was under the threshold, with even the exponential without rejected messages at all.
+
+We wanted to see not only if the target was achieved, but also the evolution in the number of recommended pods. The trend of the scaling can be seen in figures \ref{fig:default_constant_pods} and \ref{fig:default_exponential_pods}, with the respective lag cost in figures \ref{fig:default_constant_lag} and \ref{fig:default_exponential_lag}. More detail on how the cal cost is calculated can be found in section \ref{sec:lag_cost}.
 
 \begin{figure}[H]
-    \centering
-    \includegraphics[width=0.85\linewidth]{images/default/constant/rejection_cumulative.png}
-    \caption{Cumulative rejection rate.}
-    \label{fig:uniform_rejection}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/default/constant/pods.png}
+	    \caption{Number of pods trend for constant arrival time experiment.}
+	    \label{fig:default_constant_pods}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+    		\includegraphics[width=1\linewidth]{images/default/exponential/pods.png}
+	    \caption{Number of pods trend for exponential arrival time experiment.}
+    		\label{fig:default_exponential_pods}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/default/constant/lag_cost_cumulative.png}
+	    \caption{Cumulative lag cost for constant arrival time experiment.}
+	    \label{fig:default_constant_lag}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/default/exponential/lag_cost_cumulative.png}
+	    \caption{Cumulative lag cost for exponential arrival time experiment.}
+	    \label{fig:default_exponential_lag}
+	\end{subfigure}
 \end{figure}
 
-We can see the rise in rejections after increasing the amount of arriving messages, but after that a descent below the specified target.
+The surge of lag cost came mainly from downscaling. In fact, we the Sirio Scaler recommend to scale up the pods Kubernetes immediately starts creating them to match the the new incoming traffic. On the other hand, when Sirio recommend a downscale the surplus pods cannot be terminated instantaneously, mainly because these pods are still elaborating some elements.
 
-Another measure that we consider relevant is the cost inefficiency of the scaler implementation. Due to the fact that creating and destructing pods isn't an immediate operation, Kubernetes takes some time to set the number of replicas to the number prescribed by the Sirio Scaler. This lag in control can be appreciated in figure \ref{fig:uniform_pods}.
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}{0.85\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/default/constant/pods.png}
-        \caption{In blue the number of pods prescribed by the scaler, the red one pods in all states.}
-        \label{fig:uniform_pods}
-    \end{subfigure}
-    \begin{subfigure}{0.85\textwidth}
-        \includegraphics[width=\linewidth]{images/default/constant/lag_cost_cumulative.png}
-        \caption{At every time $t$, we calculate the inefficiency from starting time.}
-        \label{fig:uniform_inefficiency}
-    \end{subfigure}
-\end{figure}
+Another issue that make lag cost spike is that pods can be much higher than the recommendation. This appends when recommendation drops and rise very shortly. In fact, the first drop make most of the pods terminating, but when the second rise comes, given that terminating pods cannot be recovered, we need to instantiate even more to compensate.
 
-In figure \ref{fig:uniform_inefficiency} is reported the inefficiency while the system goes; in the followings more details in how this curve is calculated. To understand this calculation, we need to start from how cost is defined. We choose to measure cost without loss of generality in the unit of $pods \cdot time$, so that the cost of the system is both proportional to the quantity of resources used and the time we used. It's worth noting that this type of billing is common in many types of cloud providers. For example, a system that executes 5 pods for 3 seconds has a cost of 15. So, given any sequence of measured pods $pods_i$ for $i=1,\dots,t$, with a sampling period of $T_s$, the total cost of the system is calculated as \ref{eq:cost}:
-\begin{equation}
-    \label{eq:cost}
-    C = T_s\sum_{i=1}^{t}pods_i
-\end{equation}
+A summary of this results can be seen in table \ref{tab:default_summary}.
 
-So, be $C_{preb}$ the prescribed cost obtained by the sequence of pods dictated by the Sirio Scaler, and $C_{real}$ the real cost of all existing pods, we calculated the relative inefficiency as in equation \ref{eq:inefficiency}:
-\begin{equation}
-    \label{eq:inefficiency}
-    I =\frac{C_{real} - C_{preb}}{C_{preb}} = \frac{C_{real}}{C_{preb}} - 1
-\end{equation}
-
-Giving the formulas in \ref{eq:cost} and \ref{eq:inefficiency}, both can be calculated for a particular time $t_0$ by truncating the sequence $pods_i$ for $i\leq t_0$.
-
-Note that for how we defined $I$, it can be smaller than 1 in theory. In practice, we consider initializing pods for the actual cost, and making that it's very unlikely that Kubernetes waits so much to start creating them, this eventuality is negligible. However, in equation \ref{eq:inefficiency} we can force the numerator to be bigger or at least equal to the denominator.
-
-We want to state that this measure of inefficiency not necessary means a bad implementation, but only a measure of the difference between a perfect control and the actual one. In fact, this isn't calculated in reference to a commonly used control or any other type.
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|c|c|c|}
+		\hline
+		& Constant & Exponential \\
+		\hline
+		Recommended Cost & 6030 & 2880 \\
+		\hline
+		Lag Cost & 8180 & 6835 \\
+		\hline
+		Relative Lag & 35.66\% & 137.33\%  \\
+		\hline
+		Rejection Rate & 0.58\% & 0.00\% \\
+		\hline
+	\end{tabular}
+	\caption{Summary of the results for the immediate application of recommendations.}
+	\label{tab:default_summary}
+\end{table}
 
 \subsubsection{Sliding Window}
 We also decided to test the system with a state machine composed by exponential distributions. In this case, the states of the machine are associated with these parameters: 2,5 and 10 (The expected value of messages per second in this state are the same). 
