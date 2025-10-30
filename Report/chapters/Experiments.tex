@@ -176,7 +176,7 @@ In all tests we set some common parameters:
     \item Rejection Rate: 5\%.
     \item Service Rate: 1.
     \item Duration of states in the arrival process: 60s.
-    \item Total test duration: \textbf{TODO Bera insert the exact experiment time}.
+    \item Total test duration: 20 minutes.
 \end{enumerate}
 
 For the experiments with constant arrival time, we defined a state machine with the following parameters: [0.33,0.33],[0.2,0.2],[0.11,0.11],[1,1],[0.14,0.14]. In this, for every state we sample the same inter arrival time with the following expected messages per second: 3, 5, 9, 1 and 7. Considering that the state machine is cyclic, this behavior repeats periodically.
@@ -262,7 +262,7 @@ A summary of this results can be seen in table \ref{tab:default_summary}.
 		\hline
 		Recommended Cost & 6030 & 2880 \\
 		\hline
-		Lag Cost & 8180 & 6835 \\
+		Effective Cost & 8180 & 6835 \\
 		\hline
 		Relative Lag & 35.66\% & 137.33\%  \\
 		\hline
@@ -274,40 +274,123 @@ A summary of this results can be seen in table \ref{tab:default_summary}.
 \end{table}
 
 \subsubsection{Sliding Window}
-We also decided to test the system with a state machine composed by exponential distributions. In this case, the states of the machine are associated with these parameters: 2,5 and 10 (The expected value of messages per second in this state are the same). 
+In our experimenting we also tired to implement an updater that uses a sliding window to reduce the lag cost. In the case of a recommendation to increase the number of pods that will be immediately implemented, in the case of a reduction the system maintains some inertia before doing it.
 
-The result in terms of arrived and rejected messages is reported in figure \ref{fig:exponential_fast_messages}, and with it the rejection rate in figure \ref{fig:exponential_fast_rejection}:
+More precisely, for every downscaling the recommended value is inserted into a history. When the history reaches a certain dimension, and this history has values smaller of the current value the target is updated with the maximum in the history. Every time the target is changed the history is cleared.
+
+For more details, below there is the snipped of code that implements this behavior.
+
+\begin{lstlisting}
+int currentReplicas = getCurrentReplicas();
+
+if (newReplicas > currentReplicas) {
+	replicaHistory.clear(); 
+	return newReplicas;
+} else if (newReplicas < currentReplicas) {
+	replicaHistory.add(newReplicas);
+	if (replicaHistory.size() > scalingDecisionWindow) {
+		replicaHistory.removeFirst();	
+	}
+
+	if (replicaHistory.size() >= scalingDecisionWindow
+         && replicaHistory.stream().allMatch(r -> r <= currentReplicas)) {                
+		int maxInHistory = replicaHistory.stream().max(Integer::compareTo).orElse(newReplicas);
+		replicaHistory.clear();
+		return maxInHistory;
+	}
+} else {
+	replicaHistory.add(newReplicas);
+}
+return currentReplicas;
+\end{lstlisting}
+
+As in the precedent couple of test, in the following we report the trend of arrived messages confronted with the cumulative rejection rate.
 
 \begin{figure}[H]
-    \centering
-    \begin{subfigure}{0.85\linewidth}
-        \includegraphics[width=\linewidth]{images/sliding_window/constant/messages.png}
-        \caption{Arrived and Rejected messages per second to the Queue.}
-        \label{fig:exponential_fast_messages}
-    \end{subfigure}
-    \begin{subfigure}{0.85\linewidth}
-        \includegraphics[width=\linewidth]{images/sliding_window/constant/rejection_cumulative.png}
-        \caption{Cumulative rejection rate.}
-        \label{fig:exponential_fast_rejection}
-    \end{subfigure}
-\end{figure}
-In this case, the surge in rejection came later. This explains why the peak is much lower. In the end, the final rejection rate is \textbf{1.86\%}.
-
-As we can see in figure \ref{fig:exponential_fast_inefficiency}, that the inefficiency in the case of the exponential is greater, even if confronted with the \textit{equivalent} (in terms of expected values of messages per second in the states) uniform case. 
-
-\begin{figure}
-    \centering
-    \begin{subfigure}{0.85\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/sliding_window/constant/pods.png}
-        \caption{In blue the number of pods prescribed by the scaler, the red one pods in all states.}
-        \label{fig:exponential_fast_pods}
-    \end{subfigure}
-    \begin{subfigure}{0.85\textwidth}
-        \includegraphics[width=\linewidth]{images/sliding_window/constant/lag_cost_cumulative.png}
-        \caption{At every time $t$, we calculate the inefficiency from starting time.}
-        \label{fig:exponential_fast_inefficiency}
-    \end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/sliding_window/constant/messages.png}
+	    \caption{Arrived and Rejected messages per second in constant rates.}
+	    \label{fig:sliding_window_constant_messages}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+    		\includegraphics[width=1\linewidth]{images/sliding_window/exponential/messages.png}
+	    \caption{Arrived and Rejected messages per second with exponential arrival times.}
+    		\label{fig:sliding_window_exponential_messages}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/sliding_window/constant/rejection_cumulative.png}
+	    \caption{Cumulative Rejection rate for constant arrival time experiment.}
+	    \label{fig:sliding_window_constant_rejection}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/sliding_window/exponential/rejection_cumulative.png}
+	    \caption{Cumulative Rejection rate for exponential arrival time experiment.}
+	    \label{fig:sliding_window_exponential_rejection}
+	\end{subfigure}
 \end{figure}
 
-A possible reason for a greater inefficiency can be found in the variance of the stochastic process. In fact, a uniform with the maximum and minimum parameter equal (so a deterministic inter-arrival) has zero variance. In this scenario, Sirio Scaler should not change the prescribed replicas. In the other hand, having an instantaneous (or an average in a short time period) messages arrived per second can make the Sirio Scaler change a little the prescription. So, due to creation or terminating time we have slightly more pods than required.
+In the same way, the following figures shows the recommended pods with the associated cumulative lag cost.
+
+\begin{figure}[H]
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/sliding_window/constant/pods.png}
+	    \caption{Number of pods trend for constant arrival time experiment.}
+	    \label{fig:sliding_window_constant_pods}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+    		\includegraphics[width=1\linewidth]{images/sliding_window/exponential/pods.png}
+	    \caption{Number of pods trend for exponential arrival time experiment.}
+    		\label{fig:sliding_window_exponential_pods}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/sliding_window/constant/lag_cost_cumulative.png}
+	    \caption{Cumulative lag cost for constant arrival time experiment.}
+	    \label{fig:sliding_window_constant_lag}
+	\end{subfigure}
+	\begin{subfigure}{0.49\linewidth}
+	    \centering
+	    \includegraphics[width=1\linewidth]{images/sliding_window/exponential/lag_cost_cumulative.png}
+	    \caption{Cumulative lag cost for exponential arrival time experiment.}
+	    \label{fig:sliding_window_exponential_lag}
+	\end{subfigure}
+\end{figure}
+
+Lastly, table \ref{tab:sliding_window_summary} report a summary of experiments using the sliding window approach.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|c|c|c|}
+		\hline
+		& Constant & Exponential \\
+		\hline
+		Recommended Cost & 4725 & 5420 \\
+		\hline
+		Effective Cost & 5130 & 6940 \\
+		\hline
+		Relative Lag & 8.57\% & 28.04\%  \\
+		\hline
+		Rejection Rate & 0.36\% & 0.00\% \\
+		\hline
+	\end{tabular}
+	\caption{Summary of the results for the sliding window approach.}
+	\label{tab:sliding_window_summary}
+\end{table}
+
+\subsection{Comments}
+From the above result many thing can be observed. Before commenting them, it's important to notice that the total amount of messages generated in every case is mostly the same.
+
+The first result that can we notice is that, introducing a sliding window reduces significantly the cost introduced by Kubernetes lag. However, this reduction is mostly due to a rising in the recommended cost. In fact, in the case of a constant arrival time we have got a lower total cost, but in the case of the exponential not a significant change (in reality a slight increase, but that can explained by run-to-run variations).
+
+Certainly the sliding window strategy made the number of pods more stable during time, avoiding excessive peak usage of resources. To better frame this concept, in previous experiments in a different setting and a different machine the exponential case without sliding window always crashed, while using it allowed for a termination without issued.
+
+Another interesting trend that can be seen in this data is that, for some reason, the constant inter arrival time seems harder to manage that the exponential. In both cases the constant arrival rate is characterize by some rejected messages, while the exponential no. For this phenomenon we can't say if it happened by chance of if there is some hidden reason.
+
+Lastly. something can be said in reference to the very low recommended number cost achieved (in theory) in the exponential case without sliding window. We can see how it's very common see it going to 1. Due to the fact that both the arrival and service processes are stochastic, can happen that the queue goes empty. This makes the CDF generator component of the system fail to generate valid CDF. If Sirio doesn't receive any messages for a give time (10s) simply \textit{thinks} that there is not more load, and recommend for the minimum amount of pods (1 in this case). It's important to notice that terminating pods are probably still elaborating at least the last messages that they were able to pull, factually discharging the queue. These two phenomenon combined make possible to achieve very low recommended cost, but still a 0 rejection rate. The effective cost metric catches this behavior.
+
