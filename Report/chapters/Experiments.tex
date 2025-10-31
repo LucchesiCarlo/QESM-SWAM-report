@@ -108,7 +108,7 @@ Please notice ho we modeled arrival processes of our interest using the js libra
 
 If you are wondering what are the uses of others \textit{.sh} files, this is the right section. Essentially, the fundamental ones are \guillemotleft start.sh\guillemotright \ and \guillemotleft build-and-run.sh\guillemotright \ but since ./start.sh does a lot of work and when something goes wrong is not everytime necessary to rebuild everything, we provided \guillemotleft port-forward.sh\guillemotright \ for the port forwarding only and \guillemotleft delete\_and\_deploy\_sirio.sh\guillemotright \ to, as its name suggests, delete and redeploy only sirio.
 
-\subsection{Model of Arrivals}
+\subsection{Arrival Modeling}
 For all the test, we modeled in Sirio the Arrival process as an Exponential with parameter $\lambda$ equal to the inverse of the average inter-arrival time of the messages in the queue (or $\lambda$ equals to the average messages per second, it's the same). 
 
 We also tried using Bernstein phase types, but we encountered a problem that stopped it. It seems that the Sirio model of a Bernstein phase type uses a rapidly increasing amount of RAM while increases the number of phases. For instance, we tried 50 phases and the scaler tried to instance in the heap more than 768MB, making the pods overflow and be killed by Kubernetes. With a lower number of phases, we didn't achieve a good enough approximation to be used in the scaler. In the other hand, trying to extend the amount of RAM available to the Sirio pod make the machine's OS trashing most of the time.
@@ -384,7 +384,7 @@ Lastly, table \ref{tab:sliding_window_summary} report a summary of experiments u
 	\label{tab:sliding_window_summary}
 \end{table}
 
-\subsection{Comments}
+\subsubsection{Comments}
 From the above result many thing can be observed. Before commenting them, it's important to notice that the total amount of messages generated in every case is mostly the same.
 
 The first result that can we notice is that, introducing a sliding window reduces significantly the cost introduced by Kubernetes lag. However, this reduction is mostly due to a rising in the recommended cost. In fact, in the case of a constant arrival time we have got a lower total cost, but in the case of the exponential not a significant change (in reality a slight increase, but that can explained by run-to-run variations).
