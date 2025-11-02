@@ -1,8 +1,8 @@
-\section{Lag Cost}
+\section{Cost Calculation and Lag Cost Definition}
 \label{sec:lag_cost}
-Applying the recommended target replicas on Kubernetes can take some time. In the case of incrementing there is the cost time of creatine a new pod and connecting it to the Kubernetes network, while decreasing the replicas meant a safe shutdown of the pods, assuring a consistent behavior. We wanted to measure the cost added from this time delays, as the difference between the total pods instantiated in every state (Creating, Running, Terminating, ecc.) and the reccomended one.
+Applying the recommended target replicas on Kubernetes can take some time. In the case of incrementing there is the cost time of create a new pod and connecting it to the Kubernetes network, while decreasing the replicas meant a safe shutdown of the pods, assuring a consistent behavior. We wanted to measure the cost added from this time delays, as the difference between the total pods instantiated in every state (Creating, Running, Terminating, ecc.) and the recommended one.
 
-Without loss of generality, we choose to measure cost in terms of $pods \cdot time$, so that the cost of the system is both proportional to the quantity of resources used and the time for we use them. It's worth noting that this type of billing is common in many types of cloud providers. For instance, a system that executes 5 pods for 3 seconds has a cost of 15.
+Without loss of generality, we choose to measure cost in terms of $pods \cdot time$, so that the cost of the system is both proportional to the quantity of resources used and the time we use them. For instance, a system that executes 5 pods for 3 seconds has a cost of 15. It's worth noting that this type of billing is common in many types of cloud providers.
 
 So, given any sequence of measured pods $pods_i$ for $i=1,\dots,t$, with a sampling period of $T_s$, the total cost of the control can be (approximately) calculated as \ref{eq:cost}:
 \begin{equation}
@@ -10,14 +10,14 @@ So, given any sequence of measured pods $pods_i$ for $i=1,\dots,t$, with a sampl
     C = T_s\sum_{i=1}^{t}pods_i
 \end{equation}
 
-So, be $C_{preb}$ the recommended cost obtained by the sequence of pods dictated by the Sirio Scaler, and $C_{real}$ the real cost of all existing pods, we calculated the relative lag cost as in equation \ref{eq:inefficiency}:
+So, be $C_{rec}$ the recommended cost obtained by the sequence of pods dictated by the Sirio Scaler, and $C_{real}$ the real cost of all existing pods, we calculated the relative lag cost as in equation \ref{eq:inefficiency}:
 \begin{equation}
     \label{eq:inefficiency}
-    I =\frac{C_{real} - C_{preb}}{C_{preb}} = \frac{C_{real}}{C_{preb}} - 1
+    I =\frac{C_{real} - C_{rec}}{C_{rec}} = \frac{C_{real}}{C_{rec}} - 1
 \end{equation}
 
-Giving the formulas in \ref{eq:cost} and \ref{eq:inefficiency}, both can be calculated for a particular time $t_0$ by truncating the sequence $pods_i$ for $i\leq t_0$.
+Giving the formulas in \ref{eq:cost} and \ref{eq:inefficiency}, both can be calculated for a particular time $t$ by truncating the sequence $pods_i$ for $i\leq t$.
 
-Note that for how we defined $I$, it can be smaller than 1 in theory. In practice, we even consider initializing pods for the actual cost, and that makes it's very unlikely that Kubernetes waits so much to start creating them; this eventuality is negligible. However, in equation \ref{eq:inefficiency} we can force the numerator to be bigger or at least equal to the denominator.
+Note that for how we defined $I$, in theory it can be smaller than 1. In practice, we even consider initializing pods for the actual cost, and that makes it's very unlikely that Kubernetes waits so much to start creating them; this eventuality is negligible. However, if needed we can force the numerator to be bigger or at least equal to the denominator in equation \ref{eq:inefficiency}.
 
 We want to state that this measure of lag doesn't necessary means a bad implementation, but only a measure of the difference between a perfect control and the actual one.
