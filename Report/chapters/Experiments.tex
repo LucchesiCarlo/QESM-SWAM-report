@@ -20,12 +20,12 @@ We executed the following tests using this environment:
 \end{itemize}
 
 \subsection{Experiments Description}
-The experiments aim to emulate different types of traffic and demonstrate the behaviour of the system. The possible experiments can be performed choosing a distribution, and then specifying the set of parameters for every state of a state machine. In other words, if the user selects 4 different rates for the distribution selected the load is composed of 4 circularly executed states with the rates specified. The duration of each state can be modified from the code.
+The experiments have the goal of emulating different types of traffic, and showing the system behavior. The possible experiments can be performed choosing a distribution, and then specifying the set of parameters for every state of a state machine. In other words, if the user selects 4 different rates for the distribution selected the load is composed of 4 circularly executed states with the rates specified. The duration of each state is editable from the code.
 
-For example, choosing a uniform distribution with all rates value such that min=max (to model the deterministic arrival process), selecting a test duration of 9 minutes with rates = ([1,1];[2,2];[3,3];[5,5]) the result is an arrival process that generates a load with 1 message/s, than 2 messages/s, 3 messages/s, and 5 messages/s for 1 minute each. At this point, 4 minutes have elapsed, so the arrival process starts again cyclically from 1 message and so on until the end of the test.
+For example, choosing a uniform distribution with all rates value such that min=max (to model the deterministic arrival process), selecting a test duration of 9 minutes with rates = ([1,1];[2,2];[3,3];[5,5]) the result is an arrival process that generates a load with 1 message/s, than 2 messages/s, 3 messages/s and 5 messages/s for 1 minute each. At this point 4 minutes has been passed so the arrival process restarts circularly from 1 message/s and so on until the end of the test.
 
 \subsection{Experiments guide}
-In this section, we provide a guide for reproducing our experiments. First of all, it is necessary to clone the GitHub repository at \href{https://github.com/Berags/oris-predictive-autoscaler}{this link} (https://github.com/Berags/oris-predictive-autoscaler). To start the project is necessary, as a minimum dependency, to have installed \href{https://minikube.sigs.k8s.io/docs/}{Minikube}. After successfully installing Minikube, run the following command:
+In this section we include a miniguide to reproduce our experiments. First of all it is necessary to clone the GitHub repository at \href{https://github.com/Berags/oris-predictive-autoscaler}{this link} (https://github.com/Berags/oris-predictive-autoscaler). To start the project is necessary, as a minimum dependency, to have installed \href{https://minikube.sigs.k8s.io/docs/}{Minikube}. After having installed successfully Minikube, execute the following command:
 
 \begin{table}[!htb]
 \centering
@@ -36,7 +36,7 @@ minikube start
 \end{tabular}
 \end{table}
 
-then, it is sufficient to position the terminal on the directory of the project where the .sh file named ./start.sh is located and execute it with:
+then, it is sufficient to position the terminal on the directory of the project where it is present the .sh file named ./start.sh and execute it with:
 
 \begin{table}[!htb]
 \centering
@@ -56,7 +56,7 @@ This contains all the instruction necessary to build and run our project (i.e. a
   \item It's possible to monitor the state of the Sirio Controller's JVM using \textit{jconsole} with the address \guillemotleft http://localhost:9000\guillemotright.
 \end{itemize}
 
-At this point everything is ready to start the tests. To do so, move to the folder \guillemotleft k6 \guillemotright and run:
+At this point everything is ready to start the tests. In order to do it, go in the folder of \guillemotleft k6 \guillemotright  and execute:
 \begin{table}[!htb]
 \centering
 \begin{tabular}{c}
@@ -72,16 +72,17 @@ This command will show the following menu:
 2. Poisson ($\lambda$<100)
 3. Uniform (Use min = max for deterministic)
 4. Erlang (k, $\lambda$)
-5. Exit
+5. Hyper Erlang (k, $\lambda$, weight)
+6. Exit
 ----------------------------
 Insert your choice:
 \end{lstlisting}
 
-Here you can choose the distribution of the load you want to simulate. Then, all that remains is to select the required parameters as described above and as shown below. Finally, the test begins and the console displays some logs. To monitor the entire system, refer to the addresses indicated above. 
+Here you can choose the distribution of the load you want to simulate. Then, remains only to choose the requested parameters as described before and how you can see below. Finally, the test starts and the console reports some logs. To monitor the entire system consult the addresses above. 
 
 \subsubsection{Experiment personalization}
 
-By cloning the repository, you can modify the code as you wish, but if you want to change the transition time, simply modify the following instruction in rabbitmq-test.js:
+Copying the repository you can essentially modify the code as you prefer but if you want to modify the transition time is sufficient to modify the following instruction:
 
 \begin{table}[!htb]
 \centering
@@ -92,7 +93,7 @@ const transitionTime = DistributionFactory.getDeterministic(60);
 \end{tabular}
 \end{table}
 
-with \guillemotleft DistributionFactory.getDeterministic(60) \guillemotright \ defining the seconds of permanence in each state. If you are not interested in a deterministic transition, you can replace it, for example, with an exponential one with:
+in rabbitmq-test.js and with \guillemotleft 60\guillemotright \ that are the seconds of permanence in each state. If you are not interested in a deterministic transition you can substitute it, for example, with an Exponential one with:
 
 \begin{table}[!htb]
 \centering
@@ -104,18 +105,18 @@ const transitionTime = DistributionFactory.getExponential(20);
 \end{table}
 
 
-Please note that we have modelled the arrival processes of interest to us using the js library included in the code repository under k6/lib (all documentation included), but ultimately it is also possible to use the other supported distributions.
+Please notice how we modeled arrival processes of our interest using the js library included in the code repo under k6/lib (all the documentation inside), but eventually you can use also the others distributions supported.
 
 \subsubsection{Setup Details}
 
-Here are reported more details on the usage of the \textit{.sh} file inside the main directory. Essentially, the fundamental ones are \guillemotleft start.sh\guillemotright \ and \guillemotleft build-and-run.sh\guillemotright \. Since ./start.sh does a lot of work, if something goes wrong is not necessary to re-deploy everything, so we provided \guillemotleft port-forward.sh\guillemotright \ for the port forwarding only and \guillemotleft delete\_and\_deploy\_sirio.sh\guillemotright \ to, as its name suggests, delete and redeploy only sirio. The \guillemotleft delete\_and\_cdf\_genereator.sh\guillemotright does the same, but for the \textit{inter-arrival-collector} service.
+Here are reported more details on the usage of the \textit{.sh} file inside the main directory. Essentially, the fundamental ones are \guillemotleft start.sh\guillemotright \ and \guillemotleft build-and-run.sh\guillemotright \ but since ./start.sh does a lot of work and when something goes wrong is not everytime necessary to rebuild everything, so we provided \guillemotleft port-forward.sh\guillemotright \ for the port forwarding only and \guillemotleft delete\_and\_deploy\_sirio.sh\guillemotright \ to, as its name suggests, delete and redeploy only sirio. The \guillemotleft delete\_and\_cdf\_genereator.sh\guillemotright does the same, but for the \textit{inter-arrival-collector} service.
 
 \subsection{Arrival Modeling}
 For all the test, we modeled in Sirio the Arrival process as an Exponential with parameter $\lambda$ equal to the inverse of the average inter-arrival time of the messages in the queue (or $\lambda$ equals to the average messages per second, that is equivalent). 
 
-We also tried using Bernstein phase types, but encountered a problem. It appears that the Sirio model of a Bernstein phase type uses a rapidly increasing amount of RAM as the number of phases increases. For example, we tried with 50 phases and the scaler attempted to instantiate more than 768 MB in the heap, causing the pods to overflow their memory and be terminated by Kubernetes. With fewer phases, we did not get a sufficiently good approximation to use in the scaler. On the other hand, trying to extend the amount of RAM available to the Sirio pod caused the machine's operating system to hang most of the time.
+We also tried using Bernstein phase types, but we encountered a problem. It seems that the Sirio model of a Bernstein phase type uses a rapidly increasing amount of RAM in the increasing number of phases. For instance, we tried 50 phases and the scaler tried to instance in the heap more than 768MB, making the pods memory overflow and be killed by Kubernetes. With a lower number of phases, we didn't achieve a good enough approximation to be used in the scaler. In the other hand, trying to extend the amount of RAM available to the Sirio pod make the machine's OS trashing most of the time.
 
-Furthermore, we found that the exponential approximation is more than adequate for a uniform arrival rate. Furthermore, having a microservice controller that consumes so many resources seems strange and counterproductive, as well as contrary to the very principles of microservices.
+In addition to that, we found the approximation with the exponential more that capable to a uniform arrival rate. Then, having a microservice controller that consumes so much resource seem odd and counterproductive, and against the principles of microservices itself.
 
 \subsection{Rejection Rate Calculation}
 Here we want to discuss how we calculated the rejection rate, and the reasons for it. For our experiments, we wanted to calculate a relative rejection rate. In fact, we consider this approach more robust if compared to an absolute target.
@@ -152,9 +153,9 @@ P(Exp(\lambda_a)<Exp(\lambda_s)) = \frac{\lambda_a}{\lambda_a + \lambda_s} \labe
 P(R)=\frac{\lambda_a}{\lambda_a + \lambda_s}P(Q=q_{max}\land A) \label{eq:rejection_fin}
 \end{gather}
 
-Considering that, given a closed model, Sirio is able to enumerate all reachable states, using steady-state analysis we can obtain the probability of having a state in which the queue is full and the arrival transition is enabled, while using \textit{MarkingExpresions} to obtain transition rates is trivial.
+Considering that given a closed model Sirio is capable to enumerate all the reachable states, using the steady state analysis we can get the probability of having a state where the queue is full and the arrival transition is enable, while using the \textit{MarkingExpresions} getting transition rates is trivial.
 
-To highlight how this formula can be translated in practice, it is reported the code that calculated the rejection rate.
+Here below, to highlight how this formula can be translated in practice, is reported the code that calculated the rejection rate.
 \begin{lstlisting}
 BigDecimal rejection = BigDecimal.ZERO;
 Map<Marking, BigDecimal> results = RegSteadyState.builder().build().compute(pn, m).getSteadyState();
@@ -254,9 +255,9 @@ We wanted to see not only if the target was achieved, but also the evolution in 
 	\caption{Measure of pod instances with immediate update.}
 \end{figure}
 
-The surge of lag cost came mainly from downscaling. In fact, when Sirio Scaler recommends increasing the number of pods, Kubernetes immediately starts creating them to accommodate the new incoming traffic. On the other hand, when Sirio recommends a reduction, the excess pods cannot be terminated instantly, mainly because they are still processing some items.
+The surge of lag cost came mainly from downscaling. In fact, we the Sirio Scaler recommend to scale up the pods Kubernetes immediately starts creating them to match the the new incoming traffic. On the other hand, when Sirio recommend a downscale the surplus pods cannot be terminated instantaneously, mainly because they are still elaborating some elements.
 
-Another issue that increases lag costs is that pods can be much higher than recommended. This happens when recommendations decrease and increase in a short period of time. In fact, the first decrease causes most pods to be terminated, but when the second increase comes, since terminated pods cannot be recovered, new ones must be created to compensate.
+Another issue that make lag cost spike is that pods can be much higher than the recommendation. This appends when recommendation drops and rise very shortly. In fact, the first drop make most of the pods terminating, but when the second rise comes, given that terminating pods cannot be recovered, we need to instantiate even more to compensate.
 
 A summary of this results can be seen in table \ref{tab:default_summary}.
 
@@ -306,9 +307,6 @@ if (newReplicas > currentReplicas) {
 	}
 } else {
 	replicaHistory.add(newReplicas);
-	if (replicaHistory.size() > scalingDecisionWindow) {
-		replicaHistory.removeFirst();	
-	}
 }
 return currentReplicas;
 \end{lstlisting}
@@ -398,11 +396,11 @@ Lastly, table \ref{tab:sliding_window_summary} report a summary of experiments u
 \subsubsection{Comments}
 From the above result many thing can be observed. Before commenting them, it's important to notice that the total amount of messages generated in every case is mostly the same.
 
-The first result that can be noted is that the introduction of a sliding window significantly reduces the cost introduced by the Kubernetes delay. However, this reduction is mainly due to the increase in the recommended cost. In fact, in the case of a constant arrival time, we obtained a lower total cost, but in the exponential case, there was no significant change (in fact, there was a slight increase, but this can be explained by variations between one execution and another).
+The first result that can we notice is that, introducing a sliding window reduces significantly the cost introduced by Kubernetes lag. However, this reduction is mostly due to a rising in the recommended cost. In fact, in the case of a constant arrival time we have got a lower total cost, but in the case of the exponential not a significant change (in reality a slight increase, but that can explained by run-to-run variations).
 
-Certainly, the sliding window strategy has made the number of pods more stable over time, avoiding excessive use of resources. To better frame this concept, in previous experiments conducted in a different context and on a different machine, the exponential case without a sliding window always caused a crash, while its use allowed for smooth termination.
+Certainly the sliding window strategy made the number of pods more stable during time, avoiding excessive peak usage of resources. To better frame this concept, in previous experiments in a different setting and a different machine the exponential case without sliding window always crashed, while using it allowed for a termination without issued.
 
-Another interesting trend that can be seen in this data is that, for some reason, the constant inter arrival time seems harder to manage than the exponential. In both cases the constant arrival rate is characterised by some rejected messages, while the exponential does not. We cannot say whether this phenomenon happened by chance or whether there is some hidden reason behind it.
+Another interesting trend that can be seen in this data is that, for some reason, the constant inter arrival time seems harder to manage that the exponential. In both cases the constant arrival rate is characterize by some rejected messages, while the exponential no. For this phenomenon we can't say if it happened by chance of if there is some hidden reason.
 
-Finally, something can be said about the very low recommended numerical cost achieved (in theory) in the exponential case without a sliding window. We can see how it is very common to see it reach 1 (the minimum). Since both the arrival and service processes are stochastic, it may happen that the queue empties. This makes the CDF generator component of the system fail to generate valid CDF. If Sirio doesn't receive any messages for a give time (10s as our default choice) it simply \textit{thinks} that there is no load, and recommend for the minimum amount of pods (1 in this case). It's important to notice that terminating pods are probably still elaborating at least the last messages that they were able to pull, factually discharging the queue. These two phenomena combined result in very low recommended costs, but still a zero rejection rate. The actual cost metric reflects this behaviour.
+Lastly. something can be said in reference to the very low recommended number cost achieved (in theory) in the exponential case without sliding window. We can see how it's very common see it going to 1 (the minimum). Due to the fact that both the arrival and service processes are stochastic, can happen that the queue goes empty. This makes the CDF generator component of the system fail to generate valid CDF. If Sirio doesn't receive any messages for a give time (10s as our default choice) it simply \textit{thinks} that there is not load, and recommend for the minimum amount of pods (1 in this case). It's important to notice that terminating pods are probably still elaborating at least the last messages that they were able to pull, factually discharging the queue. These two phenomenon combined make possible to achieve very low recommended cost, but still a 0 rejection rate. The effective cost metric catches this behavior.
 
