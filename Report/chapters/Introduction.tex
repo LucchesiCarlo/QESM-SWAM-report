@@ -3,22 +3,22 @@
 
 \subsection{Statement}
 
-We want to build a micro-service oriented architecture using Kubernetes (K8s) to deploy and scale horizontally our containers (pods in K8s terminology). The goal of the project is to create a complete platform to study the behaviors and the increased capacities of an horizontal scaling based on a message-queue rejection rate. In doing so, technologies such as K6, RabbitMQ, Kafka, Docker, Grafana, Prometheus and Sirio Framework will be used. In details, we want to models different types of load (Poisson, Uniform, Erlang inter arrival times) with different rates to generate messages. Exploiting information about the arrival, we use a stochastic model of the system to recommend horizontally scaling of service's pods, in order to meet a rejection rate target. 
+We want to build a micro-service oriented architecture using Kubernetes (K8s) to deploy and scale horizontally our containers (pods in K8s terminology). The goal of the project is to create a complete platform to study the behaviors and the increased capacities of an horizontal scaling based on a message-queue rejection rate. In doing so, technologies such as K6, RabbitMQ, Kafka, Docker, Grafana, Prometheus and Sirio Framework will be used. In detail, we want to model different types of load (Poisson, Uniform, Erlang inter arrival times) with different rates to generate messages. Using arrival information, we utilise a stochastic model of the system to recommend horizontal scaling of service pods in order to meet a rejection rate target. 
 
 \subsection{Project goal and working environment}
-The goal of the project is to verify the feasibility and efficacy of a horizontal autoscaler based on stochastic properties of the model that represent a queue system. Using the framework Sirio it is possible to define Stochastic Time Petri Nets that models the behavior of a microservices system, and evaluate some quantity of interest (like Rejection Rate). The objective is to scale the number of services in the most efficient way while respecting a Service Level Agreement (SLA), identified in this case as a maximum rejection rate tolerated. The working environment is developed using Kubernetes and consists of these main components:
+The aim of the project is to verify the feasibility and effectiveness of a horizontal autoscaler based on the stochastic properties of the model representing a queueing system. Using the framework Sirio, it is possible to define Stochastic Time Petri Nets that models the behavior of a microservices-based system, evaluating some quantity of interest (like Rejection Rate). The objective is to scale the number of services in the most efficient way while respecting a Service Level Agreement (SLA) and/or Service Level Objectives (SLO), identified in this case as a maximum rejection rate tolerated. The working environment is developed using Kubernetes and consists of the following main components:
 \begin{itemize}
     \item \textbf{Arrival Service}: this service generates the requests following a particular stochastic distribution. This is implemented using K6 tool.
 
-    \item \textbf{K6}: a framework used to stress test systems like ours.
+    \item \textbf{K6}: a framework used to load test systems.
 
     \item \textbf{Queue}: this element buffers the requests, allowing the worker to elaborate them in a second moment. We decided to use RabbitMQ for the main queue thanks to the provided possibility of setting the queue size explicitly.
 
-    \item \textbf{Process Service:} this service pulls messages from the queue and elaborates them. We did a custom implementation in Pyhton that simply executes a busy wait.
+    \item \textbf{Process Service:} this service consumes messages from the queue and processes them. We did a custom implementation in Pyhton that simply executes a busy wait.
     
     \item \textbf{Monitoring/Visualization:} it’s done using Prometheus as metric server, in combination with Grafana for the dashboards.
 
-    \item \textbf{Sirio Controller:} this Java service utilizes the CDF of the arrival process (calculated using another custom service) to build a STPN and evaluating the rejection rate. Then, it recommends to Kubernetes the minimum number of active replicas needed to respect the SLA.
+    \item \textbf{Sirio Controller:} this Java service uses the arrival process CDF (calculated using another custom service) to create an STPN and evaluate the rejection rate. It then recommends to Kubernetes the minimum number of active replicas required to meet the SLA.
     
 \end{itemize}
 
